@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Book, ChevronLeft, ChevronRight, Plus, FileText, Clock } from 'lucide-react';
+import { Book, ChevronLeft, ChevronRight, Plus, FileText, Clock, Terminal } from 'lucide-react';
 
 interface DashboardProps {
     notes: any[];
@@ -42,9 +42,9 @@ export default function Dashboard({ notes, tags, notebooks, noteTagMap, onSelect
             {/* Header */}
             <div className="dash-header">
                 <div>
-                    <h1 className="dash-title">Suas Notas</h1>
+                    <h1 className="dash-title">Sua coleção de notas</h1>
                     <p className="dash-subtitle">
-                        {notes.length} nota{notes.length !== 1 ? 's' : ''} • {notebooks.length} caderno{notebooks.length !== 1 ? 's' : ''} • {tags.length} tag{tags.length !== 1 ? 's' : ''}
+                        {notes.length} registro{notes.length !== 1 ? 's' : ''} • {notebooks.length} caderno{notebooks.length !== 1 ? 's' : ''} • {tags.length} tag{tags.length !== 1 ? 's' : ''}
                     </p>
                 </div>
                 <button className="dash-new-btn" onClick={onNewNote}>
@@ -170,6 +170,22 @@ export default function Dashboard({ notes, tags, notebooks, noteTagMap, onSelect
                         })}
                     </div>
                 )}
+            </section>
+
+            {/* Zabbix Shortcuts */}
+            <section className="dash-section zabbix-shortcuts">
+                <h2 className="dash-section-title"><Terminal size={16} /> Atalhos zabbix</h2>
+                <div className="dash-chips">
+                    <a href="https://www.zabbix.com/documentation/current/en" target="_blank" rel="noreferrer" className="dash-chip link-chip">
+                        <Book size={12} /> Documentação oficial
+                    </a>
+                    <a href="https://www.zabbix.com/forum/" target="_blank" rel="noreferrer" className="dash-chip link-chip">
+                        <Terminal size={12} /> Fórum comunidade
+                    </a>
+                    <a href="https://github.com/zabbix/zabbix" target="_blank" rel="noreferrer" className="dash-chip link-chip">
+                        <Plus size={12} /> Github zabbix
+                    </a>
+                </div>
             </section>
         </div>
     );

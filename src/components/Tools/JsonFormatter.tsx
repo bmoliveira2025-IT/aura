@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Copy, Check, Trash2, FileJson, Search, WrapText, Minimize2 } from 'lucide-react';
 
-export default function JsonTool() {
-    const [input, setInput] = useState('');
+export default function JsonFormatter() {
+    const [input, setInput] = useState(() => localStorage.getItem('aura-json-formatter-input') || '');
     const [output, setOutput] = useState('');
-    const [jsonPath, setJsonPath] = useState('');
+    const [jsonPath, setJsonPath] = useState(() => localStorage.getItem('aura-json-formatter-path') || '');
     const [error, setError] = useState<string | null>(null);
     const [isCopied, setIsCopied] = useState(false);
     const [isInputCopied, setIsInputCopied] = useState(false);
     const [suggestions, setSuggestions] = useState<string[]>([]);
+
+    // Persist changes
+    useEffect(() => {
+        localStorage.setItem('aura-json-formatter-input', input);
+        localStorage.setItem('aura-json-formatter-path', jsonPath);
+    }, [input, jsonPath]);
 
     // Live filtering effect
     useEffect(() => {
@@ -147,6 +153,8 @@ export default function JsonTool() {
         setOutput('');
         setJsonPath('');
         setError(null);
+        localStorage.removeItem('aura-json-formatter-input');
+        localStorage.removeItem('aura-json-formatter-path');
     };
 
     const highlightJson = (json: string) => {
@@ -185,7 +193,7 @@ export default function JsonTool() {
                         <FileJson size={22} className="tool-icon" />
                     </div>
                     <div>
-                        <h2>JSON Formatter & JSONPath</h2>
+                        <h2>Formatador json & jsonpath</h2>
                         <p className="tool-subtitle">Formate, minifique e filtre seus dados JSON instantaneamente.</p>
                     </div>
                 </div>
@@ -199,7 +207,7 @@ export default function JsonTool() {
 
             <div className="json-tool-grid">
                 <div className="json-input-section">
-                    <div className="section-label">Entrada JSON</div>
+                    <div className="section-label">Entrada json</div>
                     <div className="input-textarea-wrapper" style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <textarea
                             className="json-textarea modern-scroll"
@@ -232,7 +240,7 @@ export default function JsonTool() {
                 </div>
 
                 <div className="json-output-section">
-                    <div className="section-label">JSONPath & Resultado</div>
+                    <div className="section-label">Jsonpath & resultado</div>
                     <div className="path-input-wrapper modern-focus">
                         <Search size={16} className="path-icon" />
                         <input
@@ -267,7 +275,7 @@ export default function JsonTool() {
                         {output && (
                             <button className="copy-output-btn modern" onClick={() => copyToClipboard(output, setIsCopied)}>
                                 {isCopied ? <Check size={14} /> : <Copy size={14} />}
-                                <span>{isCopied ? 'Copiado' : 'Copiar Resultado'}</span>
+                                <span>{isCopied ? 'Copiado' : 'Copiar resultado'}</span>
                             </button>
                         )}
                     </div>

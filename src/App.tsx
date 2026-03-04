@@ -3,8 +3,9 @@ import { supabase } from './lib/supabase';
 import { useAuth } from './hooks/useAuth';
 import Editor from './components/Editor/Editor';
 import Dashboard from './components/Dashboard/Dashboard';
-import { Plus, ChevronRight, ChevronLeft, Shield, Zap, Laptop, MoreVertical, Trash2, X, FolderOpen, Book, Home, Settings, Terminal } from 'lucide-react';
-import JsonTool from './components/Tools/JsonTool';
+import { Plus, ChevronRight, ChevronLeft, Shield, Zap, Laptop, MoreVertical, Trash2, X, FolderOpen, Book, Home, Settings, Terminal, Search, List } from 'lucide-react';
+import JsonFormatter from './components/Tools/JsonFormatter';
+import JsonViewer from './components/Tools/JsonViewer';
 
 interface Note {
   id: string;
@@ -38,9 +39,10 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [notes, setNotes] = useState<Note[]>([]);
   const [showMenu, setShowMenu] = useState(false);
-  const [view, setView] = useState<'dashboard' | 'editor' | 'json-tool'>(() => {
+  const [view, setView] = useState<'dashboard' | 'editor' | 'json-formatter' | 'json-viewer'>(() => {
     return (localStorage.getItem('aura_last_view') as any) || 'dashboard';
   });
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Settings & Theme
   const [showSettings, setShowSettings] = useState(false);
@@ -121,8 +123,10 @@ function App() {
 
       if (lastView === 'editor' && lastNoteId) {
         await pickNote(lastNoteId);
-      } else if (lastView === 'json-tool') {
-        setView('json-tool');
+      } else if (lastView === 'json-tool' || lastView === 'json-formatter') {
+        setView('json-formatter');
+      } else if (lastView === 'json-viewer') {
+        setView('json-viewer');
       } else {
         setView('dashboard');
       }
@@ -291,39 +295,104 @@ function App() {
   if (filterNotebook) filteredNotes = filteredNotes.filter(n => n.notebook === filterNotebook);
   if (filterTag) filteredNotes = filteredNotes.filter(n => noteTagMap[n.id]?.includes(filterTag));
 
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    filteredNotes = filteredNotes.filter(n => {
+      const matchesTitle = n.title?.toLowerCase().includes(q);
+      const matchesTags = noteTagMap[n.id]?.some(tid => {
+        const tag = tags.find(t => t.id === tid);
+        return tag?.name.toLowerCase().includes(q);
+      });
+      return matchesTitle || matchesTags;
+    });
+  }
+
   // ─── Render ───────────────────────────────────────────────
 
   if (isLoading) return <div className="loading-screen">Carregando Aura...</div>;
 
   if (!session) {
     return (
-      <div className="auth-wrap">
-        <div className="auth-box">
-          <div className="auth-logo">
-            <div className="auth-gem" />
-            <h1>Aura</h1>
-            <p>Seu ambiente premium para código e notas.</p>
+      <div className="auth-fullscreen">
+        <div className="auth-hero">
+          <div className="hero-content">
+            <div className="auth-hero-logo">
+              <div className="auth-gem large" />
+              <h1>Aura</h1>
+            </div>
+            <p className="hero-tagline">A base de conhecimento essencial para especialistas Zabbix.</p>
+
+            <div className="feature-grid">
+              <div className="feature-item">
+                <div className="feat-icon"><Terminal size={20} /></div>
+                <div>
+                  <h3>Scripts & Templates</h3>
+                  <p>Guarde seus scripts Python, Bash e templates de monitoramento com sintaxe highlight.</p>
+                </div>
+              </div>
+              <div className="feature-item">
+                <div className="feat-icon"><Zap size={20} /></div>
+                <div>
+                  <h3>Debug de LLD & Regex</h3>
+                  <p>Ferramentas integradas para testar JSONPath e expressões regulares do Zabbix.</p>
+                </div>
+              </div>
+              <div className="feature-item">
+                <div className="feat-icon"><Laptop size={20} /></div>
+                <div>
+                  <h3>Inventário Estruturado</h3>
+                  <p>Documente topologias, itens e triggers de forma organizada e segura.</p>
+                </div>
+              </div>
+              <div className="feature-item">
+                <div className="feat-icon"><Shield size={20} /></div>
+                <div>
+                  <h3>Pronto para o NOC</h3>
+                  <p>Interface Dark otimizada para ambientes de operação e alta performance.</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <form className="auth-form" onSubmit={handleAuth}>
-            {authError && <div className="auth-error">{authError}</div>}
-            <div className="field">
-              <label>E-mail</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="dev@aura.com" required />
+          <div className="hero-footer">
+            <span>Powered by Supabase & Aura Team</span>
+          </div>
+        </div>
+
+        <div className="auth-form-side">
+          <div className="auth-box glass">
+            <div className="auth-logo-mobile">
+              <div className="auth-gem" />
+              <h1>Aura</h1>
             </div>
-            <div className="field">
-              <label>Senha</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
+            <h2>{isSignUp ? 'Criar sua conta' : 'Boas-vindas de volta'}</h2>
+            <p className="auth-subtitle">{isSignUp ? 'Comece sua jornada hoje mesmo.' : 'Entre para continuar de onde parou.'}</p>
+
+            <form className="auth-form" onSubmit={handleAuth}>
+              {authError && <div className="auth-error">{authError}</div>}
+              <div className="field">
+                <label>E-mail</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="dev@aura.com" required />
+              </div>
+              <div className="field">
+                <label>Senha</label>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
+              </div>
+              <button type="submit" className="btn-primary main-auth-btn">
+                {isSignUp ? 'Criar conta grátis' : 'Entrar na plataforma'}
+              </button>
+            </form>
+
+            <p className="auth-switch">
+              {isSignUp ? 'Já tem uma conta?' : 'Novo por aqui?'}
+              <button onClick={() => setIsSignUp(!isSignUp)}>
+                {isSignUp ? ' Fazer login' : ' Criar conta grátis'}
+              </button>
+            </p>
+
+            <div className="auth-badges">
+              <span className="badge"><Shield size={12} /> SSL Seguro</span>
+              <span className="badge"><Zap size={12} /> Build Fast</span>
             </div>
-            <button type="submit" className="btn-primary">{isSignUp ? 'Criar conta' : 'Entrar na plataforma'}</button>
-          </form>
-          <p className="auth-switch">
-            {isSignUp ? 'Já tem conta?' : 'Novo aqui?'}
-            <button onClick={() => setIsSignUp(!isSignUp)}>{isSignUp ? ' Fazer login' : ' Criar conta grátis'}</button>
-          </p>
-          <div className="auth-badges">
-            <span className="badge"><Shield size={12} /> Seguro</span>
-            <span className="badge"><Zap size={12} /> Rápido</span>
-            <span className="badge"><Laptop size={12} /> Cloud Sync</span>
           </div>
         </div>
       </div>
@@ -332,44 +401,63 @@ function App() {
 
   return (
     <div className="app">
-      <button
-        className={`sidebar-toggle-btn ${isSidebarOpen ? 'open' : 'closed'}`}
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        title={isSidebarOpen ? 'Recolher menu' : 'Expandir menu'}
-      >
-        {isSidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-      </button>
-
       <aside className={`sidebar ${isSidebarOpen ? '' : 'collapsed'}`}>
         <div className="sidebar-top">
           <div className="logo">
             <div className="logo-gem" />
             <span className="logo-name">Aura</span>
           </div>
-          <button className="icon-btn" onClick={newNote} title="Nova Nota"><Plus size={16} /></button>
+          <button className="icon-btn" onClick={newNote} title="Nova nota"><Plus size={16} /></button>
         </div>
 
         <div className="sidebar-body">
+          {/* ── Busca ── */}
+          <div className="sidebar-section">
+            <div className="search-wrapper">
+              <Search className="search-icon" size={14} />
+              <input
+                type="text"
+                placeholder="Buscar nota ou tag..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+              {searchQuery && (
+                <button className="search-clear" onClick={() => setSearchQuery('')}>
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* ── Home ── */}
           <div className="sidebar-section">
             <button
               className={`home-btn ${view === 'dashboard' ? 'active' : ''}`}
               onClick={() => setView('dashboard')}
             >
-              <Home size={14} /> Página Inicial
+              <Home size={14} /> Página inicial
             </button>
           </div>
+
 
           {/* ── Ferramentas ── */}
           <div className="sidebar-section">
             <span className="section-label">Ferramentas</span>
             <div className="notebooks-list">
               <button
-                className={`notebook-btn ${view === 'json-tool' ? 'active' : ''}`}
-                onClick={() => setView('json-tool')}
+                className={`notebook-btn ${view === 'json-formatter' ? 'active' : ''}`}
+                onClick={() => setView('json-formatter')}
               >
                 <Terminal size={14} />
-                <span>Formatador JSON</span>
+                <span>Formatador json</span>
+              </button>
+              <button
+                className={`notebook-btn ${view === 'json-viewer' ? 'active' : ''}`}
+                onClick={() => setView('json-viewer')}
+              >
+                <List size={14} />
+                <span>Visualizador json</span>
               </button>
             </div>
           </div>
@@ -383,7 +471,7 @@ function App() {
                 onClick={() => setFilterNotebook(null)}
               >
                 <FolderOpen size={14} />
-                <span>Todas as Notas</span>
+                <span>Todas as notas</span>
                 <span className="nb-count">{notes.length}</span>
               </button>
               {notebooks.map((nb: string) => (
@@ -403,7 +491,7 @@ function App() {
           {/* ── Notas ── */}
           <div className="sidebar-section">
             <span className="section-label">
-              {filterNotebook ? `Notas em "${filterNotebook}"` : 'Suas Notas'}
+              {filterNotebook ? `Notas em "${filterNotebook}"` : 'Notas recentes'}
               {(filterNotebook || filterTag) && (
                 <button className="clear-filter-btn" onClick={() => { setFilterNotebook(null); setFilterTag(null); }} title="Limpar filtros">
                   <X size={10} />
@@ -475,6 +563,14 @@ function App() {
         </div>
       </aside>
 
+      <button
+        className={`sidebar-toggle-btn ${isSidebarOpen ? 'open' : 'closed'}`}
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        title={isSidebarOpen ? 'Recolher menu' : 'Expandir menu'}
+      >
+        {isSidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+      </button>
+
       <main className="main">
         {view === 'dashboard' ? (
           <Dashboard
@@ -485,8 +581,10 @@ function App() {
             onSelectNote={pickNote}
             onNewNote={newNote}
           />
-        ) : view === 'json-tool' ? (
-          <JsonTool />
+        ) : view === 'json-formatter' ? (
+          <JsonFormatter />
+        ) : view === 'json-viewer' ? (
+          <JsonViewer />
         ) : (
           <div className="main-inner">
             <div className="title-bar">
@@ -577,7 +675,7 @@ function App() {
                         <div className="dropdown-divider" />
 
                         <button className="dropdown-item danger" onClick={deleteNote}>
-                          <Trash2 size={15} /> Enviar para Lixeira
+                          <Trash2 size={15} /> Enviar para lixeira
                         </button>
                       </div>
                     </>
@@ -612,19 +710,19 @@ function App() {
 
               <div className="theme-grid">
                 <button className={`theme-btn ${theme === 'dark' ? 'active' : ''}`} onClick={() => setTheme('dark')}>
-                  <div className="theme-preview" style={{ background: '#1e1e1e', borderColor: '#4fc1ff' }}></div>
-                  <span>Aura Escuro</span>
+                  <div className="theme-preview" style={{ background: '#0f1115', borderColor: '#4fc1ff' }}></div>
+                  <span>Aura escuro</span>
                 </button>
                 <button className={`theme-btn ${theme === 'solar' ? 'active' : ''}`} onClick={() => setTheme('solar')}>
-                  <div className="theme-preview" style={{ background: '#faf7f2', borderColor: '#f59e0b' }}></div>
+                  <div className="theme-preview" style={{ background: '#fcfaf7', borderColor: '#f59e0b' }}></div>
                   <span>Solar</span>
                 </button>
                 <button className={`theme-btn ${theme === 'florest' ? 'active' : ''}`} onClick={() => setTheme('florest')}>
-                  <div className="theme-preview" style={{ background: '#1c2321', borderColor: '#4ade80' }}></div>
+                  <div className="theme-preview" style={{ background: '#0d1312', borderColor: '#4ade80' }}></div>
                   <span>Florest</span>
                 </button>
                 <button className={`theme-btn ${theme === 'nordic' ? 'active' : ''}`} onClick={() => setTheme('nordic')}>
-                  <div className="theme-preview" style={{ background: '#e2e8f0', borderColor: '#3b82f6' }}></div>
+                  <div className="theme-preview" style={{ background: '#f1f5f9', borderColor: '#2563eb' }}></div>
                   <span>Nordic</span>
                 </button>
               </div>
