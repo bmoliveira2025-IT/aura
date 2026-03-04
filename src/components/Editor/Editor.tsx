@@ -4,7 +4,6 @@ import StarterKit from '@tiptap/starter-kit';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { all, createLowlight } from 'lowlight';
 import Image from '@tiptap/extension-image';
-import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import {
     Bold, Italic, Underline as UnderlineIcon, Code,
@@ -71,7 +70,6 @@ export default function Editor({ content, onChange }: EditorProps) {
             StarterKit.configure({
                 codeBlock: false,
             }),
-            Underline,
             CodeBlockLowlight.extend({
                 addNodeView() {
                     return ReactNodeViewRenderer(CodeBlockComponent);

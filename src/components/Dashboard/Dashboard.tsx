@@ -56,7 +56,13 @@ export default function Dashboard({ notes, tags, notebooks, noteTagMap, onSelect
         const numRegex = /\b(\d+)\b/g;
 
         const safeReplace = (regex: RegExp, className: string) => {
-            escaped = escaped.replace(regex, (match, offset, string) => {
+            escaped = escaped.replace(regex, (match, ...args) => {
+                // Em regex com um grupo de captura, os argumentos são:
+                // (match, p1, offset, string)
+                // Usamos os dois últimos
+                const string = args[args.length - 1] as string;
+                const offset = args[args.length - 2] as number;
+
                 const before = string.substring(0, offset);
                 const openSpan = (before.match(/<span/g) || []).length;
                 const closeSpan = (before.match(/<\/span/g) || []).length;
