@@ -46,18 +46,27 @@ export default function Dashboard({ notes, tags, notebooks, noteTagMap, onSelect
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;');
 
-        // Syntax highlighting ultra-leve
-        // Keywords
-        escaped = escaped.replace(/\b(const|let|var|function|return|if|else|for|while|import|export|class|default|type|interface|any|string|number|boolean|null|undefined)\b/g, '<span class="hp-k">$1</span>');
-
-        // Strings (simplificado)
+        // 1. Comentários e Strings (primeiro)
+        escaped = escaped.replace(/(\/\/.*$)/gm, '<span class="hp-c">$1</span>');
         escaped = escaped.replace(/(".*?"|'.*?')/g, '<span class="hp-s">$1</span>');
 
-        // Comments
-        escaped = escaped.replace(/(\/\/.*$)/gm, '<span class="hp-c">$1</span>');
+        // 2. Keywords e Numeros (apenas onde NÃO há um <span aberto)
+        const keywords = ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'import', 'export', 'class', 'default', 'type', 'interface', 'any', 'string', 'number', 'boolean', 'null', 'undefined'];
+        const kwRegex = new RegExp(`\\b(${keywords.join('|')})\\b`, 'g');
+        const numRegex = /\b(\d+)\b/g;
 
-        // Numbers
-        escaped = escaped.replace(/\b(\d+)\b/g, '<span class="hp-n">$1</span>');
+        const safeReplace = (regex: RegExp, className: string) => {
+            escaped = escaped.replace(regex, (match, p1, offset, string) => {
+                const before = string.substring(0, offset);
+                const openSpan = (before.match(/<span/g) || []).length;
+                const closeSpan = (before.match(/<\/span/g) || []).length;
+                if (openSpan > closeSpan) return match;
+                return `<span class="${className}">${match}</span>`;
+            });
+        };
+
+        safeReplace(kwRegex, 'hp-k');
+        safeReplace(numRegex, 'hp-n');
 
         return escaped;
     };
