@@ -37,6 +37,31 @@ export default function Dashboard({ notes, tags, notebooks, noteTagMap, onSelect
         setActiveTag(null);
     };
 
+    const renderPreview = (text: string) => {
+        if (!text) return 'Nota vazia...';
+
+        // Escapar HTML básico
+        let escaped = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        // Syntax highlighting ultra-leve
+        // Keywords
+        escaped = escaped.replace(/\b(const|let|var|function|return|if|else|for|while|import|export|class|default|type|interface|any|string|number|boolean|null|undefined)\b/g, '<span class="hp-k">$1</span>');
+
+        // Strings (simplificado)
+        escaped = escaped.replace(/(".*?"|'.*?')/g, '<span class="hp-s">$1</span>');
+
+        // Comments
+        escaped = escaped.replace(/(\/\/.*$)/gm, '<span class="hp-c">$1</span>');
+
+        // Numbers
+        escaped = escaped.replace(/\b(\d+)\b/g, '<span class="hp-n">$1</span>');
+
+        return escaped;
+    };
+
     return (
         <div className="dash">
             {/* Header */}
@@ -146,24 +171,29 @@ export default function Dashboard({ notes, tags, notebooks, noteTagMap, onSelect
                                                 <Book size={10} /> {note.notebook}
                                             </span>
                                         )}
-                                    </div>
-                                    <h3 className="dash-card-title">{note.title || 'Sem título'}</h3>
-                                    <p className="dash-card-preview">{preview || 'Nota vazia...'}</p>
-                                    <div className="dash-card-footer">
-                                        <span className="dash-card-date">
-                                            <Clock size={10} />
-                                            {new Date(note.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                                        </span>
                                         {noteTags.length > 0 && (
                                             <div className="dash-card-tags">
                                                 {noteTags.slice(0, 3).map(tid => {
                                                     const tag = tags.find(t => t.id === tid);
                                                     return tag ? (
-                                                        <span key={tid} className="dash-card-tag-dot" style={{ background: tag.color }} title={tag.name} />
+                                                        <span key={tid} className="dash-card-tag-badge" style={{ backgroundColor: `${tag.color}20`, color: tag.color }}>
+                                                            {tag.name}
+                                                        </span>
                                                     ) : null;
                                                 })}
                                             </div>
                                         )}
+                                    </div>
+                                    <h3 className="dash-card-title">{note.title || 'Sem título'}</h3>
+                                    <div
+                                        className="dash-card-preview-rich"
+                                        dangerouslySetInnerHTML={{ __html: renderPreview(preview) }}
+                                    />
+                                    <div className="dash-card-footer">
+                                        <span className="dash-card-date">
+                                            <Clock size={10} />
+                                            {new Date(note.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                                        </span>
                                     </div>
                                 </button>
                             );
