@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Trash2, List } from 'lucide-react';
+import { Trash2, List, Search } from 'lucide-react';
 import JsonTreeView from './JsonTreeView';
 
 export default function JsonViewer() {
     const [input, setInput] = useState(() => localStorage.getItem('aura-json-viewer-input') || '');
     const [parsedData, setParsedData] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         localStorage.setItem('aura-json-viewer-input', input);
@@ -30,6 +31,7 @@ export default function JsonViewer() {
         setInput('');
         setParsedData(null);
         setError(null);
+        setSearchQuery('');
         localStorage.removeItem('aura-json-viewer-input');
     };
 
@@ -67,11 +69,21 @@ export default function JsonViewer() {
 
                 <div className="json-output-section">
                     <div className="section-label">Estrutura em árvore</div>
+                    <div className="tree-search-wrapper modern-focus">
+                        <Search size={16} className="path-icon" />
+                        <input
+                            type="text"
+                            className="tree-search-input"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Buscar na árvore (ex: nome, id, true)..."
+                        />
+                    </div>
                     <div className="output-wrapper">
                         {error && <div className="json-error">{error}</div>}
                         <div className="json-tree-wrapper modern-scroll">
                             {parsedData ? (
-                                <JsonTreeView data={parsedData} />
+                                <JsonTreeView data={parsedData} searchQuery={searchQuery} />
                             ) : (
                                 <div className="tree-empty">// Cole um JSON válido para explorar</div>
                             )}

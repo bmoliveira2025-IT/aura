@@ -6,11 +6,10 @@ interface JsonTreeViewProps {
     label?: string;
     isLast?: boolean;
     depth?: number;
+    searchQuery?: string;
 }
 
-const JsonTreeView: React.FC<JsonTreeViewProps> = ({ data, label, isLast = true, depth = 0 }) => {
-    const [isExpanded, setIsExpanded] = useState(depth < 2); // Expand top levels by default
-
+const JsonTreeView: React.FC<JsonTreeViewProps> = ({ data, label, isLast = true, depth = 0, searchQuery = '' }) => {
     const getType = (val: any) => {
         if (Array.isArray(val)) return 'array';
         if (val === null) return 'null';
@@ -20,6 +19,61 @@ const JsonTreeView: React.FC<JsonTreeViewProps> = ({ data, label, isLast = true,
     const type = getType(data);
     const isObject = type === 'object' || type === 'array';
 
+    // Helper to check if this node OR any children matches the search query
+    const hasMatch = (obj: any, labelStr: string | undefined): boolean => {
+        if (!searchQuery) return false;
+        const q = searchQuery.toLowerCase();
+
+        // Check label/key
+        if (labelStr && labelStr.toLowerCase().includes(q)) return true;
+
+        // Check value if leaf
+        if (!isObject) {
+            return String(obj).toLowerCase().includes(q);
+        }
+
+        // Check children recursively
+        if (obj && typeof obj === 'object') {
+            return Object.entries(obj).some(([k, v]) => {
+                if (labelStr === undefined && Array.isArray(obj)) {
+                    // If we are in an array element without label, we just check the value
+                    if (typeof v !== 'object' || v === null) {
+                        return String(v).toLowerCase().includes(q);
+                    }
+                    return hasMatch(v, undefined);
+                }
+                return k.toLowerCase().includes(q) || hasMatch(v, k);
+            });
+        }
+        return false;
+    };
+
+    const nodeHasMatch = hasMatch(data, label);
+    const [isExpanded, setIsExpanded] = useState(depth < 2 || (!!searchQuery && nodeHasMatch));
+
+    // Force expand if search query changes and there's a match below
+    React.useEffect(() => {
+        if (searchQuery && nodeHasMatch) {
+            setIsExpanded(true);
+        }
+    }, [searchQuery, nodeHasMatch]);
+
+    const highlightText = (text: string) => {
+        if (!searchQuery) return text;
+        const parts = text.split(new RegExp(`(${searchQuery})`, 'gi'));
+        return (
+            <>
+                {parts.map((part, i) => (
+                    part.toLowerCase() === searchQuery.toLowerCase() ? (
+                        <span key={i} className="tree-highlight">{part}</span>
+                    ) : (
+                        part
+                    )
+                ))}
+            </>
+        );
+    };
+
     const toggleExpand = (e: React.MouseEvent) => {
         e.stopPropagation();
         setIsExpanded(!isExpanded);
@@ -28,15 +82,15 @@ const JsonTreeView: React.FC<JsonTreeViewProps> = ({ data, label, isLast = true,
     const renderValue = () => {
         switch (type) {
             case 'string':
-                return <span className="tree-val-string">"{data}"</span>;
+                return <span className="tree-val-string">"{highlightText(data)}"</span>;
             case 'number':
-                return <span className="tree-val-number">{data}</span>;
+                return <span className="tree-val-number">{highlightText(data.toString())}</span>;
             case 'boolean':
-                return <span className="tree-val-boolean">{data.toString()}</span>;
+                return <span className="tree-val-boolean">{highlightText(data.toString())}</span>;
             case 'null':
                 return <span className="tree-val-null">null</span>;
             default:
-                return <span>{String(data)}</span>;
+                return <span>{highlightText(String(data))}</span>;
         }
     };
 
@@ -58,7 +112,7 @@ const JsonTreeView: React.FC<JsonTreeViewProps> = ({ data, label, isLast = true,
         return (
             <div className="tree-node leaf" style={{ paddingLeft: `${depth * 20}px` }}>
                 <span className="tree-type-icon">{getTypeIcon()}</span>
-                {label && <span className="tree-key">{label}: </span>}
+                {label && <span className="tree-key">{highlightText(label)}: </span>}
                 {renderValue()}
                 {!isLast && <span className="tree-comma">,</span>}
             </div>
@@ -74,7 +128,7 @@ const JsonTreeView: React.FC<JsonTreeViewProps> = ({ data, label, isLast = true,
                 <span className="tree-toggle">
                     {!isEmpty && (isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
                 </span>
-                {label && <span className="tree-key">{label}: </span>}
+                {label && <span className="tree-key">{highlightText(label)}: </span>}
                 <span className="tree-bracket">{getBracket(true)}</span>
                 {!isExpanded && !isEmpty && (
                     <span className="tree-collapsed-info">
@@ -94,6 +148,7 @@ const JsonTreeView: React.FC<JsonTreeViewProps> = ({ data, label, isLast = true,
                             label={type === 'array' ? undefined : key}
                             isLast={index === keys.length - 1}
                             depth={depth + 1}
+                            searchQuery={searchQuery}
                         />
                     ))}
                 </div>
