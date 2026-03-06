@@ -44,21 +44,25 @@
   --sidebar-bg: #f5f0e6;
   --surface: #ffffff;
   --surface-2: #fffcf8;
-  --border: rgba(0, 0, 0, 0.05);
-  --border-hi: rgba(0, 0, 0, 0.1);
+  --border: rgba(0, 0, 0, 0.08);
+  /* Darker border for light theme */
+  --border-hi: rgba(0, 0, 0, 0.15);
   --pri: #f59e0b;
-  --pri-glow: rgba(245, 158, 11, 0.2);
+  --pri-glow: rgba(245, 158, 11, 0.25);
   --acc: #ef4444;
-  --safe: #10b981;
+  --safe: #059669;
+  /* Darker green for contrast */
   --warn: #db2777;
-  --text: #1e293b;
-  --muted: #64748b;
+  --text: #0f172a;
+  /* Much darker text */
+  --muted: #475569;
+  /* Much darker muted text */
   --tree-key: #0369a1;
   --tree-str: #b45309;
   --tree-num: #15803d;
   --tree-bool: #7e22ce;
   --tree-bracket: #be185d;
-  --shadow: 0 4px 16px rgba(180, 150, 100, 0.12);
+  --shadow: 0 4px 16px rgba(180, 150, 100, 0.15);
 }
 
 [data-theme="florest"] {
@@ -90,10 +94,11 @@
   --sidebar-bg: #e2e8f0;
   --surface: #ffffff;
   --surface-2: #f8fafc;
-  --border: rgba(15, 23, 42, 0.06);
-  --border-hi: rgba(15, 23, 42, 0.12);
+  --border: rgba(15, 23, 42, 0.12);
+  /* Increased for better structure */
+  --border-hi: rgba(15, 23, 42, 0.2);
   --pri: #2563eb;
-  --pri-glow: rgba(37, 99, 235, 0.15);
+  --pri-glow: rgba(37, 99, 235, 0.25);
   --acc: #7c3aed;
   --safe: #0d9488;
   --warn: #e11d48;
@@ -104,7 +109,8 @@
   --tree-num: #166534;
   --tree-bool: #6d28d9;
   --tree-bracket: #be123c;
-  --shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --shadow: 0 4px 20px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 15px 45px rgba(15, 23, 42, 0.15);
 }
 
 html,
@@ -230,11 +236,57 @@ body {
 }
 
 .logo-gem {
-  width: 30px;
-  height: 30px;
-  background: url('/aura-logo.png') center/cover no-repeat;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, var(--pri), var(--acc));
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 4px 12px var(--pri-glow),
+    inset 0 0 10px rgba(255, 255, 255, 0.4),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.logo-gem::before {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 70%;
+  height: 70%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: inherit;
+  backdrop-filter: blur(2px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.logo-gem::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: linear-gradient(rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0) 100%);
+  transform: rotate(45deg);
+  animation: shimmer 4s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  100% {
+    transform: translate(50%, 50%) rotate(45deg);
+  }
 }
 
 .logo-name {
@@ -1294,7 +1346,7 @@ body:hover::-webkit-scrollbar-thumb,
   font-size: 3rem;
   font-weight: 800;
   letter-spacing: -0.04em;
-  background: linear-gradient(to right, #fff, #94a3b8);
+  background: linear-gradient(to right, var(--text), var(--muted));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1302,25 +1354,58 @@ body:hover::-webkit-scrollbar-thumb,
 }
 
 .auth-gem.large {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   background: linear-gradient(135deg, var(--pri), var(--acc));
-  border-radius: 16px;
-  box-shadow: 0 0 40px var(--pri-glow);
+  border-radius: 22px;
+  box-shadow:
+    0 15px 40px var(--pri-glow),
+    inset 0 0 20px rgba(255, 255, 255, 0.5),
+    inset 0 -5px 10px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-gem.large::before {
+  content: '';
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  z-index: 1;
 }
 
 .auth-gem.large::after {
   content: '';
   position: absolute;
-  top: -20%;
-  left: -20%;
-  width: 60%;
-  height: 60%;
-  background: rgba(255, 255, 255, 0.3);
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: linear-gradient(rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.5) 50%,
+      rgba(255, 255, 255, 0) 100%);
   transform: rotate(45deg);
-  filter: blur(10px);
+  animation: shimmerLarge 5s infinite;
+  z-index: 2;
+}
+
+@keyframes shimmerLarge {
+  0% {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  20%,
+  100% {
+    transform: translate(50%, 50%) rotate(45deg);
+  }
 }
 
 .hero-tagline {
@@ -1328,7 +1413,7 @@ body:hover::-webkit-scrollbar-thumb,
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: 3.5rem;
-  color: #fff;
+  color: var(--text);
   max-width: 500px;
 }
 
@@ -1364,8 +1449,8 @@ body:hover::-webkit-scrollbar-thumb,
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-2);
+  border: 1px solid var(--border-hi);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1384,12 +1469,12 @@ body:hover::-webkit-scrollbar-thumb,
   font-size: 1.1rem;
   font-weight: 700;
   margin-bottom: 0.35rem;
-  color: #fff;
+  color: var(--text);
 }
 
 .feature-item p {
   font-size: 0.95rem;
-  color: #94a3b8;
+  color: var(--muted);
   line-height: 1.6;
   max-width: 400px;
 }
@@ -1424,7 +1509,7 @@ body:hover::-webkit-scrollbar-thumb,
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-hi);
   border-radius: 28px;
-  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.8), 0 0 20px rgba(79, 193, 255, 0.05);
+  box-shadow: var(--shadow-lg);
   animation: fadeIn 0.6s var(--easing);
 }
 
@@ -1435,16 +1520,37 @@ body:hover::-webkit-scrollbar-thumb,
   margin-bottom: 2.5rem;
 }
 
-.auth-logo-mobile .auth-gem {
-  width: 54px;
-  height: 54px;
+.auth-gem {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--pri), var(--acc));
+  border-radius: 12px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 4px 12px var(--pri-glow),
+    inset 0 0 10px rgba(255, 255, 255, 0.3),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.auth-gem::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 60%;
+  height: 60%;
+  background: rgba(255, 255, 255, 0.4);
+  transform: rotate(45deg);
+  filter: blur(8px);
 }
 
 .auth-logo-mobile h1 {
   font-size: 1.75rem;
   margin-top: 1rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--text);
 }
 
 .auth-box h2 {
