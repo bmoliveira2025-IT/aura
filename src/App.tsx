@@ -6,6 +6,8 @@ import Dashboard from './components/Dashboard/Dashboard';
 import { Plus, ChevronRight, ChevronLeft, Shield, Zap, Laptop, MoreVertical, Trash2, X, FolderOpen, Book, Home, Settings, Terminal, Search, List } from 'lucide-react';
 import JsonFormatter from './components/Tools/JsonFormatter';
 import JsonViewer from './components/Tools/JsonViewer';
+import { Logo } from './components/Icons/Logo';
+
 
 interface Note {
   id: string;
@@ -317,7 +319,7 @@ function App() {
         <div className="auth-hero">
           <div className="hero-content">
             <div className="auth-hero-logo">
-              <div className="auth-gem large" />
+              <Logo size={120} className="auth-gem large" glow={true} />
               <h1>Aura</h1>
             </div>
             <p className="hero-tagline">A base de conhecimento essencial para especialistas Zabbix.</p>
@@ -361,7 +363,7 @@ function App() {
         <div className="auth-form-side">
           <div className="auth-box glass">
             <div className="auth-logo-mobile">
-              <div className="auth-gem" />
+              <Logo size={48} className="auth-gem" glow={true} />
               <h1>Aura</h1>
             </div>
             <h2>{isSignUp ? 'Criar sua conta' : 'Boas-vindas de volta'}</h2>
@@ -404,7 +406,7 @@ function App() {
       <aside className={`sidebar ${isSidebarOpen ? '' : 'collapsed'}`}>
         <div className="sidebar-top">
           <div className="logo">
-            <div className="logo-gem" />
+            <Logo size={36} className="logo-gem" glow={false} />
             <span className="logo-name">Aura</span>
           </div>
           <button className="icon-btn" onClick={newNote} title="Nova nota"><Plus size={16} /></button>
