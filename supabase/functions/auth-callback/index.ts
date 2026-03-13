@@ -32,8 +32,13 @@ serve(async (req) => {
     )
 
     const tokenUrl = 'https://oauth2.googleapis.com/token'
-    const clientId = Deno.env.get('GOOGLE_CLIENT_ID') ?? ''
-    const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET') ?? ''
+    const clientId = Deno.env.get('GOOGLE_CLIENT_ID')
+    const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET')
+
+    if (!clientId || !clientSecret) {
+      throw new Error('Configuração incompleta: GOOGLE_CLIENT_ID ou GOOGLE_CLIENT_SECRET não definidos no Supabase')
+    }
+
     const redirectUri = `${url.origin}/functions/v1/auth-callback`
 
     const response = await fetch(tokenUrl, {
