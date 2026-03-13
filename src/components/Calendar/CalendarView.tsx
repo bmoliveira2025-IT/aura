@@ -75,7 +75,8 @@ export default function CalendarView() {
             return;
         }
 
-        const redirectUri = `${window.location.origin}/functions/v1/auth-callback`;
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const redirectUri = `${supabaseUrl}/functions/v1/auth-callback`;
         const state = btoa(JSON.stringify({ userId: session?.user.id, platform: 'google' }));
         const scope = 'https://www.googleapis.com/auth/calendar.readonly';
         
