@@ -333,10 +333,34 @@
     background: var(--surface-2);
     color: var(--text);
     border: 1px solid var(--border);
-    padding: 10px 18px;
-    border-radius: 10px;
+    padding: 10px 22px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--pri), var(--acc));
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 15px var(--pri-glow);
+    transition: all 0.2s;
+    outline: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+    box-shadow: 0 6px 20px var(--pri-glow);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
 }
 
 .btn-secondary:hover {
