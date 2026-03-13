@@ -3,11 +3,14 @@ import { supabase } from './lib/supabase';
 import { useAuth } from './hooks/useAuth';
 import Editor from './components/Editor/Editor';
 import Dashboard from './components/Dashboard/Dashboard';
-import { Plus, ChevronRight, ChevronLeft, Shield, Zap, Laptop, MoreVertical, Trash2, X, FolderOpen, Book, Home, Settings, Terminal, Search, List, Calendar } from 'lucide-react';
+import { Plus, ChevronRight, ChevronLeft, Shield, Zap, Laptop, MoreVertical, Trash2, X, Book, Home, Settings, Terminal, Search, List, Calendar, FileText, Tag as TagIcon } from 'lucide-react';
 import JsonFormatter from './components/Tools/JsonFormatter';
 import JsonViewer from './components/Tools/JsonViewer';
 import { Logo } from './components/Icons/Logo';
 import CalendarView from './components/Calendar/CalendarView';
+import HomeView from './components/Home/HomeView';
+import NotebooksView from './components/Notebooks/NotebooksView';
+import TagsView from './components/Tags/TagsView';
 
 
 interface Note {
@@ -36,37 +39,27 @@ function App() {
   const lastSavedTitleRef = useRef('');
   const lastSavedContentRef = useRef('');
 
+  // Core State
   const [noteId, setNoteId] = useState<string | null>(() => localStorage.getItem('aura_last_note_id'));
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [view, setView] = useState<'home' | 'notes' | 'editor' | 'json-formatter' | 'json-viewer' | 'calendar' | 'notebooks' | 'tags'>(() => {
+    return (localStorage.getItem('aura_last_view') as any) || 'home';
+  });
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('aura_is_sidebar_open');
     return saved !== null ? JSON.parse(saved) : true;
   });
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [showMenu, setShowMenu] = useState(false);
-  const [view, setView] = useState<'dashboard' | 'editor' | 'json-formatter' | 'json-viewer' | 'calendar'>(() => {
-    return (localStorage.getItem('aura_last_view') as any) || 'dashboard';
-  });
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Handle OAuth Redirects
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('sync') === 'success') {
-      setView('calendar');
-      // Clean up the URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
 
   // Settings & Theme
   const [showSettings, setShowSettings] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'solar' | 'florest' | 'nordic'>(() => {
     return (localStorage.getItem('aura_theme') as any) || 'dark';
   });
-
-  // ─── Persistence ──────────────────────────────────────────
 
   // Tags
   const [tags, setTags] = useState<Tag[]>([]);
@@ -81,7 +74,33 @@ function App() {
   const [showNewNotebook, setShowNewNotebook] = useState(false);
   const [newNotebookName, setNewNotebookName] = useState('');
 
-  // Auth
+  const [noteTagMap, setNoteTagMap] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    if (!session?.user || notes.length === 0) return;
+    const loadMap = async () => {
+      const { data } = await supabase.from('note_tags').select('note_id, tag_id').in('note_id', notes.map(n => n.id));
+      if (data) {
+        const map: Record<string, string[]> = {};
+        data.forEach((d: any) => { if (!map[d.note_id]) map[d.note_id] = []; map[d.note_id].push(d.tag_id); });
+        setNoteTagMap(map);
+      }
+    };
+    loadMap();
+  }, [notes, session]);
+
+  // Derived State
+  const filteredNotes = notes.filter(n => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery.trim() || 
+                         n.title?.toLowerCase().includes(q) || 
+                         noteTagMap[n.id]?.some(tid => tags.find(t => t.id === tid)?.name.toLowerCase().includes(q));
+    const matchesNotebook = !filterNotebook || n.notebook === filterNotebook;
+    const matchesTag = !filterTag || noteTagMap[n.id]?.includes(filterTag);
+    return matchesSearch && matchesNotebook && matchesTag;
+  });
+
+  // Auth State (for UI)
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -98,6 +117,12 @@ function App() {
   }, [view, noteId, theme, isSidebarOpen, appReady]);
 
   // ─── Data Loading ─────────────────────────────────────────
+
+  const loadEvents = async () => {
+    if (!session?.user) return;
+    const { data } = await supabase.from('events').select('*').eq('user_id', session.user.id).order('start_at');
+    if (data) setEvents(data);
+  };
 
   const loadAllNotes = async () => {
     if (!session?.user) return;
@@ -131,6 +156,7 @@ function App() {
     const initialize = async () => {
       await loadAllNotes();
       await loadTags();
+      await loadEvents();
 
       // If we are on a note, load its tags
       const lastNoteId = localStorage.getItem('aura_last_note_id');
@@ -288,38 +314,7 @@ function App() {
     return () => clearTimeout(t);
   }, [content, title, noteId, session, view, appReady]);
 
-  // ─── Filtering ────────────────────────────────────────────
-
-  const [noteTagMap, setNoteTagMap] = useState<Record<string, string[]>>({});
-
-  useEffect(() => {
-    if (!session?.user || notes.length === 0) return;
-    const loadMap = async () => {
-      const { data } = await supabase.from('note_tags').select('note_id, tag_id').in('note_id', notes.map(n => n.id));
-      if (data) {
-        const map: Record<string, string[]> = {};
-        data.forEach((d: any) => { if (!map[d.note_id]) map[d.note_id] = []; map[d.note_id].push(d.tag_id); });
-        setNoteTagMap(map);
-      }
-    };
-    loadMap();
-  }, [notes, session]);
-
-  let filteredNotes = notes;
-  if (filterNotebook) filteredNotes = filteredNotes.filter(n => n.notebook === filterNotebook);
-  if (filterTag) filteredNotes = filteredNotes.filter(n => noteTagMap[n.id]?.includes(filterTag));
-
-  if (searchQuery.trim()) {
-    const q = searchQuery.toLowerCase();
-    filteredNotes = filteredNotes.filter(n => {
-      const matchesTitle = n.title?.toLowerCase().includes(q);
-      const matchesTags = noteTagMap[n.id]?.some(tid => {
-        const tag = tags.find(t => t.id === tid);
-        return tag?.name.toLowerCase().includes(q);
-      });
-      return matchesTitle || matchesTags;
-    });
-  }
+  // ─── Render ───────────────────────────────────────────────
 
   // ─── Render ───────────────────────────────────────────────
 
@@ -444,19 +439,21 @@ function App() {
             </div>
           </div>
 
-          {/* ── Início ── */}
+          {/* ── Menu Principal ── */}
           <div className="sidebar-section">
-            <span className="section-label">Início</span>
+            <span className="section-label">Menu Principal</span>
             <div className="notebooks-list">
               <button
-                className={`notebook-btn ${view === 'dashboard' && filterNotebook === null && filterTag === null ? 'active' : ''}`}
-                onClick={() => {
-                  setView('dashboard');
-                  setFilterNotebook(null);
-                  setFilterTag(null);
-                }}
+                className={`notebook-btn ${view === 'home' ? 'active' : ''}`}
+                onClick={() => setView('home')}
               >
-                <Home size={14} /> <span>Todas as Notas</span>
+                <Home size={14} /> <span>Início</span>
+              </button>
+              <button
+                className={`notebook-btn ${view === 'notes' ? 'active' : ''}`}
+                onClick={() => setView('notes')}
+              >
+                <FileText size={14} /> <span>Notas</span>
               </button>
               <button
                 className={`notebook-btn ${view === 'calendar' ? 'active' : ''}`}
@@ -472,30 +469,17 @@ function App() {
             <span className="section-label">Organização</span>
             <div className="notebooks-list">
               <button
-                className={`notebook-btn ${view === 'dashboard' && filterNotebook === null ? 'active' : ''}`}
-                onClick={() => {
-                  setView('dashboard');
-                  setFilterNotebook(null);
-                }}
+                className={`notebook-btn ${view === 'notebooks' ? 'active' : ''}`}
+                onClick={() => setView('notebooks')}
               >
-                <FolderOpen size={14} />
-                <span>Todas as notas</span>
-                <span className="nb-count">{notes.length}</span>
+                <Book size={14} /> <span>Cadernos</span>
               </button>
-              {notebooks.map((nb: string) => (
-                <button
-                  key={nb}
-                  className={`notebook-btn ${filterNotebook === nb ? 'active' : ''}`}
-                  onClick={() => {
-                    setView('dashboard');
-                    setFilterNotebook(filterNotebook === nb ? null : nb);
-                  }}
-                >
-                  <Book size={14} />
-                  <span>{nb}</span>
-                  <span className="nb-count">{notes.filter((n: Note) => n.notebook === nb).length}</span>
-                </button>
-              ))}
+              <button
+                className={`notebook-btn ${view === 'tags' ? 'active' : ''}`}
+                onClick={() => setView('tags')}
+              >
+                <TagIcon size={14} /> <span>Tags</span>
+              </button>
             </div>
           </div>
 
@@ -507,15 +491,13 @@ function App() {
                 className={`notebook-btn ${view === 'json-formatter' ? 'active' : ''}`}
                 onClick={() => setView('json-formatter')}
               >
-                <Terminal size={14} />
-                <span>Formatador JSON</span>
+                <Terminal size={14} /> <span>Formatador JSON</span>
               </button>
               <button
                 className={`notebook-btn ${view === 'json-viewer' ? 'active' : ''}`}
                 onClick={() => setView('json-viewer')}
               >
-                <List size={14} />
-                <span>Visualizador JSON</span>
+                <List size={14} /> <span>Visualizador JSON</span>
               </button>
             </div>
           </div>
@@ -572,14 +554,46 @@ function App() {
       </button>
 
       <main className="main">
-        {view === 'dashboard' ? (
-          <Dashboard
+        {view === 'home' ? (
+          <HomeView
+            session={session}
             notes={notes}
+            events={events}
+            notebooks={notebooks}
+            tags={tags}
+            onNavigate={(v) => setView(v)}
+            onSelectNote={pickNote}
+          />
+        ) : view === 'notes' ? (
+          <Dashboard
+            notes={filteredNotes}
             tags={tags}
             notebooks={notebooks}
             noteTagMap={noteTagMap}
             onSelectNote={pickNote}
             onNewNote={newNote}
+          />
+        ) : view === 'notebooks' ? (
+          <NotebooksView
+            notebooks={notebooks}
+            notes={notes}
+            onNavigateToNotes={(nb) => {
+              setFilterNotebook(nb);
+              setView('notes');
+            }}
+          />
+        ) : view === 'tags' ? (
+          <TagsView
+            tags={tags}
+            onNavigateToNotes={(tid) => {
+              setFilterTag(tid);
+              setView('notes');
+            }}
+            onDeleteTag={deleteTag}
+            onCreateTag={(name) => {
+              setNewTagName(name);
+              createTag();
+            }}
           />
         ) : view === 'json-formatter' ? (
           <JsonFormatter />
