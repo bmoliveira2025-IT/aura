@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useEditor, EditorContent, ReactNodeViewRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
@@ -8,7 +8,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import {
     Bold, Italic, Underline as UnderlineIcon, Code,
     Heading1, Heading2, List, ListOrdered, Undo, Redo,
-    Palette
+    Palette, Calendar
 } from 'lucide-react';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
@@ -41,6 +41,28 @@ const COLORS = [
 export default function Editor({ content, onChange }: EditorProps) {
     const { user } = useAuth();
     const [showColorPicker, setShowColorPicker] = useState(false);
+    const [todayEvents, setTodayEvents] = useState<any[]>([]);
+
+    useEffect(() => {
+        const loadTodayEvents = async () => {
+            if (!user) return;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const { data } = await supabase
+                .from('events')
+                .select('*')
+                .eq('user_id', user.id)
+                .gte('start_at', today.toISOString())
+                .lt('start_at', tomorrow.toISOString())
+                .order('start_at', { ascending: true });
+
+            if (data) setTodayEvents(data);
+        };
+        loadTodayEvents();
+    }, [user]);
 
     const handleImageUpload = async (file: File) => {
         if (!user) {
@@ -224,6 +246,25 @@ export default function Editor({ content, onChange }: EditorProps) {
 
             <div className="editor-container">
                 <EditorContent editor={editor} className="lumina-editor" />
+                
+                {todayEvents.length > 0 && (
+                    <aside className="editor-agenda-widget">
+                        <div className="agenda-header">
+                            <Calendar size={14} />
+                            <span>Hoje</span>
+                        </div>
+                        <div className="agenda-items">
+                            {todayEvents.map(e => (
+                                <div key={e.id} className="agenda-item">
+                                    <span className="agenda-time">
+                                        {new Date(e.start_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                    <span className="agenda-title">{e.title}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </aside>
+                )}
             </div>
         </div>
     );

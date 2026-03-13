@@ -3,10 +3,11 @@ import { supabase } from './lib/supabase';
 import { useAuth } from './hooks/useAuth';
 import Editor from './components/Editor/Editor';
 import Dashboard from './components/Dashboard/Dashboard';
-import { Plus, ChevronRight, ChevronLeft, Shield, Zap, Laptop, MoreVertical, Trash2, X, FolderOpen, Book, Home, Settings, Terminal, Search, List } from 'lucide-react';
+import { Plus, ChevronRight, ChevronLeft, Shield, Zap, Laptop, MoreVertical, Trash2, X, FolderOpen, Book, Home, Settings, Terminal, Search, List, Calendar } from 'lucide-react';
 import JsonFormatter from './components/Tools/JsonFormatter';
 import JsonViewer from './components/Tools/JsonViewer';
 import { Logo } from './components/Icons/Logo';
+import CalendarView from './components/Calendar/CalendarView';
 
 
 interface Note {
@@ -41,7 +42,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [notes, setNotes] = useState<Note[]>([]);
   const [showMenu, setShowMenu] = useState(false);
-  const [view, setView] = useState<'dashboard' | 'editor' | 'json-formatter' | 'json-viewer'>(() => {
+  const [view, setView] = useState<'dashboard' | 'editor' | 'json-formatter' | 'json-viewer' | 'calendar'>(() => {
     return (localStorage.getItem('aura_last_view') as any) || 'dashboard';
   });
   const [searchQuery, setSearchQuery] = useState('');
@@ -461,6 +462,13 @@ function App() {
                 <List size={14} />
                 <span>Visualizador json</span>
               </button>
+              <button
+                className={`notebook-btn ${view === 'calendar' ? 'active' : ''}`}
+                onClick={() => setView('calendar')}
+              >
+                <Calendar size={14} />
+                <span>Eventos</span>
+              </button>
             </div>
           </div>
 
@@ -490,39 +498,7 @@ function App() {
             </div>
           </div>
 
-          {/* ── Notas ── */}
-          <div className="sidebar-section">
-            <span className="section-label">
-              {filterNotebook ? `Notas em "${filterNotebook}"` : 'Notas recentes'}
-              {(filterNotebook || filterTag) && (
-                <button className="clear-filter-btn" onClick={() => { setFilterNotebook(null); setFilterTag(null); }} title="Limpar filtros">
-                  <X size={10} />
-                </button>
-              )}
-            </span>
-            <div className="notes-list">
-              {filteredNotes.length === 0
-                ? <span className="empty-note">Nenhuma nota encontrada.</span>
-                : filteredNotes.map((n: Note) => (
-                  <button key={n.id} className={`note-btn ${noteId === n.id ? 'active' : ''}`} onClick={() => pickNote(n.id)}>
-                    <span className="n-title">{n.title || 'Sem título'}</span>
-                    <div className="n-meta">
-                      <span className="n-date">{new Date(n.updated_at).toLocaleDateString('pt-BR')}</span>
-                      {n.notebook && <span className="n-notebook">{n.notebook}</span>}
-                      {noteTagMap[n.id] && (
-                        <div className="n-tags">
-                          {noteTagMap[n.id].map((tid: string) => {
-                            const tag = tags.find((t: Tag) => t.id === tid);
-                            return tag ? <span key={tid} className="n-tag-dot" style={{ background: tag.color }} title={tag.name} /> : null;
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                ))
-              }
-            </div>
-          </div>
+
 
           {/* ── Tags ── */}
           <div className="sidebar-section">
@@ -587,6 +563,8 @@ function App() {
           <JsonFormatter />
         ) : view === 'json-viewer' ? (
           <JsonViewer />
+        ) : view === 'calendar' ? (
+          <CalendarView />
         ) : (
           <div className="main-inner">
             <div className="title-bar">
