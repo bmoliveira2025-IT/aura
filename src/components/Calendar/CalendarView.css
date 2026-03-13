@@ -44,36 +44,55 @@
 
 .calendar-nav {
     display: flex;
-    background: var(--surface);
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .calendar-nav,
+[data-theme="nordic"] .calendar-nav {
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .calendar-nav-btn {
     background: transparent;
     border: none;
     color: var(--text);
-    padding: 8px;
+    padding: 10px;
     cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.2s;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0.6;
 }
 
 .calendar-nav-btn:hover {
-    background: var(--surface-2);
+    background: var(--surface);
     color: var(--pri);
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.calendar-nav-btn:active {
+    transform: translateY(0);
 }
 
 .current-month-display {
-    font-weight: 600;
-    padding: 0 1rem;
-    min-width: 150px;
+    font-weight: 800;
+    padding: 0 2rem;
+    min-width: 180px;
     text-align: center;
     color: var(--text);
+    font-size: 1.05rem;
+    letter-spacing: -0.03em;
+    text-transform: capitalize;
 }
 
 .btn-add-event {

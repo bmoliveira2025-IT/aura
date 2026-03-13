@@ -39,7 +39,10 @@ function App() {
   const [noteId, setNoteId] = useState<string | null>(() => localStorage.getItem('aura_last_note_id'));
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('aura_is_sidebar_open');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [notes, setNotes] = useState<Note[]>([]);
   const [showMenu, setShowMenu] = useState(false);
   const [view, setView] = useState<'dashboard' | 'editor' | 'json-formatter' | 'json-viewer' | 'calendar'>(() => {
@@ -63,18 +66,7 @@ function App() {
     return (localStorage.getItem('aura_theme') as any) || 'dark';
   });
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('aura_theme', theme);
-  }, [theme]);
-
-  // Persist Navigation
-  useEffect(() => {
-    if (!appReady) return;
-    if (noteId) localStorage.setItem('aura_last_note_id', noteId);
-    else localStorage.removeItem('aura_last_note_id');
-    localStorage.setItem('aura_last_view', view);
-  }, [view, noteId, appReady]);
+  // ─── Persistence ──────────────────────────────────────────
 
   // Tags
   const [tags, setTags] = useState<Tag[]>([]);
@@ -94,6 +86,16 @@ function App() {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [authError, setAuthError] = useState('');
+
+  useEffect(() => {
+    if (!appReady) return;
+    localStorage.setItem('aura_last_view', view);
+    if (noteId) localStorage.setItem('aura_last_note_id', noteId);
+    else localStorage.removeItem('aura_last_note_id');
+    localStorage.setItem('aura_theme', theme);
+    localStorage.setItem('aura_is_sidebar_open', JSON.stringify(isSidebarOpen));
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [view, noteId, theme, isSidebarOpen, appReady]);
 
   // ─── Data Loading ─────────────────────────────────────────
 
@@ -130,19 +132,18 @@ function App() {
       await loadAllNotes();
       await loadTags();
 
-      // Recovery Logic
-      const lastView = localStorage.getItem('aura_last_view');
+      // If we are on a note, load its tags
       const lastNoteId = localStorage.getItem('aura_last_note_id');
-
-      if (lastView === 'editor' && lastNoteId) {
-        await pickNote(lastNoteId);
-      } else if (lastView === 'json-tool' || lastView === 'json-formatter') {
-        setView('json-formatter');
-      } else if (lastView === 'json-viewer') {
-        setView('json-viewer');
-      } else {
-        setView('dashboard');
+      if (lastNoteId) {
+        await loadNoteTags(lastNoteId);
+        const { data } = await supabase.from('notes').select('*').eq('id', lastNoteId).single();
+        if (data) {
+          setTitle(data.title);
+          setContent(data.content);
+          setCurrentNotebook(data.notebook);
+        }
       }
+      
       setAppReady(true);
     };
 
@@ -443,48 +444,28 @@ function App() {
             </div>
           </div>
 
-          {/* ── Home ── */}
+          {/* ── Menu Principal ── */}
           <div className="sidebar-section">
-            <button
-              className={`home-btn ${view === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setView('dashboard')}
-            >
-              <Home size={14} /> Página inicial
-            </button>
-          </div>
-
-
-          {/* ── Ferramentas ── */}
-          <div className="sidebar-section">
-            <span className="section-label">Ferramentas</span>
+            <span className="section-label">Menu Principal</span>
             <div className="notebooks-list">
               <button
-                className={`notebook-btn ${view === 'json-formatter' ? 'active' : ''}`}
-                onClick={() => setView('json-formatter')}
+                className={`notebook-btn ${view === 'dashboard' ? 'active' : ''}`}
+                onClick={() => setView('dashboard')}
               >
-                <Terminal size={14} />
-                <span>Formatador json</span>
-              </button>
-              <button
-                className={`notebook-btn ${view === 'json-viewer' ? 'active' : ''}`}
-                onClick={() => setView('json-viewer')}
-              >
-                <List size={14} />
-                <span>Visualizador json</span>
+                <Home size={14} /> <span>Notas</span>
               </button>
               <button
                 className={`notebook-btn ${view === 'calendar' ? 'active' : ''}`}
                 onClick={() => setView('calendar')}
               >
-                <Calendar size={14} />
-                <span>Eventos</span>
+                <Calendar size={14} /> <span>Eventos</span>
               </button>
             </div>
           </div>
 
-          {/* ── Cadernos ── */}
+          {/* ── Filtragem ── */}
           <div className="sidebar-section">
-            <span className="section-label">Cadernos</span>
+            <span className="section-label">Organização</span>
             <div className="notebooks-list">
               <button
                 className={`notebook-btn ${filterNotebook === null ? 'active' : ''}`}
@@ -505,6 +486,27 @@ function App() {
                   <span className="nb-count">{notes.filter((n: Note) => n.notebook === nb).length}</span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* ── Ferramentas ── */}
+          <div className="sidebar-section">
+            <span className="section-label">Ferramentas</span>
+            <div className="notebooks-list">
+              <button
+                className={`notebook-btn ${view === 'json-formatter' ? 'active' : ''}`}
+                onClick={() => setView('json-formatter')}
+              >
+                <Terminal size={14} />
+                <span>Formatador JSON</span>
+              </button>
+              <button
+                className={`notebook-btn ${view === 'json-viewer' ? 'active' : ''}`}
+                onClick={() => setView('json-viewer')}
+              >
+                <List size={14} />
+                <span>Visualizador JSON</span>
+              </button>
             </div>
           </div>
 
