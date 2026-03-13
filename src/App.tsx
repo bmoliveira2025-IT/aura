@@ -47,6 +47,16 @@ function App() {
   });
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Handle OAuth Redirects
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('sync') === 'success') {
+      setView('calendar');
+      // Clean up the URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   // Settings & Theme
   const [showSettings, setShowSettings] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'solar' | 'florest' | 'nordic'>(() => {
