@@ -18,8 +18,8 @@ export default function HomeView({ session, notes, events, notebooks, tags, onNa
     
     // Upcoming events (today and future)
     const upcomingEvents = [...events]
-        .filter(e => new Date(e.start_time) >= new Date(new Date().setHours(0,0,0,0)))
-        .sort((a,b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+        .filter(e => new Date(e.start_at) >= new Date(new Date().setHours(0,0,0,0)))
+        .sort((a,b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
         .slice(0, 3);
 
     return (
@@ -102,13 +102,13 @@ export default function HomeView({ session, notes, events, notebooks, tags, onNa
                                 upcomingEvents.map(event => (
                                     <div key={event.id} className="quick-event-card">
                                         <div className="event-date">
-                                            <span className="ev-day">{new Date(event.start_time).getDate()}</span>
-                                            <span className="ev-month">{new Date(event.start_time).toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                                            <span className="ev-day">{new Date(event.start_at).getDate()}</span>
+                                            <span className="ev-month">{new Date(event.start_at).toLocaleDateString('pt-BR', { month: 'short' })}</span>
                                         </div>
                                         <div className="event-info">
                                             <span className="event-title">{event.title}</span>
                                             <span className="event-time">
-                                                {new Date(event.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                {new Date(event.start_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
                                     </div>

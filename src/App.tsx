@@ -114,6 +114,14 @@ function App() {
     localStorage.setItem('aura_theme', theme);
     localStorage.setItem('aura_is_sidebar_open', JSON.stringify(isSidebarOpen));
     document.documentElement.setAttribute('data-theme', theme);
+
+    // Refresh data when navigating to key views
+    if (view === 'home') {
+      loadEvents();
+      loadAllNotes();
+    } else if (view === 'notes') {
+      loadAllNotes();
+    }
   }, [view, noteId, theme, isSidebarOpen, appReady]);
 
   // ─── Data Loading ─────────────────────────────────────────
