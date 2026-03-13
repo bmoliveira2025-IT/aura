@@ -19,6 +19,7 @@ export default function CalendarView() {
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [showModal, setShowModal] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
     const [newEvent, setNewEvent] = useState({
         title: '',
         description: '',
@@ -38,8 +39,21 @@ export default function CalendarView() {
         if (data) setEvents(data);
     };
 
+    const checkConnection = async () => {
+        if (!session?.user) return;
+        const { data } = await supabase
+            .from('user_calendar_connections')
+            .select('is_active')
+            .eq('user_id', session.user.id)
+            .eq('platform', 'google')
+            .single();
+        
+        if (data) setIsConnected(data.is_active);
+    };
+
     useEffect(() => {
         loadEvents();
+        checkConnection();
     }, [session]);
 
     const handlePrevMonth = () => {
@@ -204,7 +218,14 @@ export default function CalendarView() {
                         <h3 className="widget-title"><CalendarIcon size={18} color="#c792ea" /> Integrações</h3>
                         <p style={{ fontSize: '0.85rem', opacity: 0.7, marginBottom: '1rem' }}>Sincronize sua agenda com outras plataformas.</p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <button className="btn-secondary small" style={{ width: '100%', textAlign: 'left' }} onClick={handleConnectGoogle}>Conectar Google Calendar</button>
+                            <button 
+                                className={`btn-secondary small ${isConnected ? 'connected' : ''}`} 
+                                style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} 
+                                onClick={isConnected ? undefined : handleConnectGoogle}
+                            >
+                                {isConnected ? 'Google Calendar Conectado' : 'Conectar Google Calendar'}
+                                {isConnected && <div className="status-dot-active" />}
+                            </button>
                         </div>
                     </div>
                 </div>

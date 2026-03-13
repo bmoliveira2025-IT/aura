@@ -343,3 +343,25 @@
     background: var(--surface);
     border-color: var(--muted);
 }
+
+.btn-secondary.connected {
+    border-color: var(--pri);
+    background: var(--pri-glow);
+    color: var(--pri);
+    cursor: default;
+}
+
+.status-dot-active {
+    width: 8px;
+    height: 8px;
+    background: var(--pri);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--pri);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.7; }
+}
