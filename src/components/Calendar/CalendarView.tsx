@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, X, Trash2, Edit } from 'lucide-react';
 import './CalendarView.css';
 
 interface CalendarEvent {
@@ -20,6 +20,7 @@ export default function CalendarView() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [showModal, setShowModal] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
+    const [editingEventId, setEditingEventId] = useState<string | null>(null);
     const [newEvent, setNewEvent] = useState({
         title: '',
         description: '',
@@ -64,22 +65,68 @@ export default function CalendarView() {
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
     };
 
-    const handleAddEvent = async (e: React.FormEvent) => {
+    const handleSaveEvent = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!session?.user) return;
 
-        const { error } = await supabase.from('events').insert({
+        const eventData = {
             user_id: session.user.id,
             ...newEvent,
             start_at: new Date(newEvent.start_at).toISOString(),
             end_at: new Date(newEvent.end_at).toISOString(),
-        });
+        };
+
+        let error;
+        if (editingEventId) {
+            const { error: updateError } = await supabase
+                .from('events')
+                .update(eventData)
+                .eq('id', editingEventId)
+                .eq('user_id', session.user.id);
+            error = updateError;
+        } else {
+            const { error: insertError } = await supabase.from('events').insert(eventData);
+            error = insertError;
+        }
 
         if (!error) {
             setShowModal(false);
+            setEditingEventId(null);
             setNewEvent({ title: '', description: '', start_at: '', end_at: '', location: '' });
             loadEvents();
         }
+    };
+
+    const handleDeleteEvent = async (id: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        if (!session?.user || !confirm('Deseja realmente excluir este evento?')) return;
+
+        const { error } = await supabase
+            .from('events')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', session.user.id);
+        
+        if (!error) loadEvents();
+    };
+
+    const openEditModal = (event: CalendarEvent, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        // Convert to local datetime-local format (YYYY-MM-DDTHH:MM)
+        const formatLocal = (iso: string) => {
+            const d = new Date(iso);
+            return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        };
+
+        setEditingEventId(event.id);
+        setNewEvent({
+            title: event.title,
+            description: event.description || '',
+            start_at: formatLocal(event.start_at),
+            end_at: formatLocal(event.end_at),
+            location: event.location || ''
+        });
+        setShowModal(true);
     };
 
     const handleConnectGoogle = () => {
@@ -177,7 +224,7 @@ export default function CalendarView() {
                                     <span className="cell-number">{cell.day}</span>
                                     <div className="cell-events">
                                         {cellEvents.map(e => (
-                                            <div key={e.id} className="event-pill" title={e.title}>{e.title}</div>
+                                            <div key={e.id} className="event-pill" title={e.title} onClick={(ev) => openEditModal(e, ev)}>{e.title}</div>
                                         ))}
                                     </div>
                                 </div>
@@ -203,9 +250,13 @@ export default function CalendarView() {
                                             <span className="up-month">{monthNames[d.getMonth()].slice(0, 3)}</span>
                                             <span className="up-day">{d.getDate()}</span>
                                         </div>
-                                        <div className="upcoming-info">
+                                        <div className="upcoming-info" onClick={() => openEditModal(e)}>
                                             <h4>{e.title}</h4>
                                             <p>{d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • {e.location || 'Sem local'}</p>
+                                        </div>
+                                        <div className="upcoming-actions">
+                                            <button className="icon-btn small" onClick={(ev) => openEditModal(e, ev)} title="Editar"><Edit size={14} /></button>
+                                            <button className="icon-btn small delete" onClick={(ev) => handleDeleteEvent(e.id, ev)} title="Excluir"><Trash2 size={14} /></button>
                                         </div>
                                     </div>
                                 );
@@ -235,10 +286,10 @@ export default function CalendarView() {
                 <div className="modal-overlay">
                     <div className="event-modal">
                         <div className="dash-header" style={{ marginBottom: '1.5rem', justifyContent: 'space-between' }}>
-                            <h2>Novo Evento</h2>
-                            <button className="icon-btn" onClick={() => setShowModal(false)}><X size={20} /></button>
+                            <h2>{editingEventId ? 'Editar Evento' : 'Novo Evento'}</h2>
+                            <button className="icon-btn" onClick={() => { setShowModal(false); setEditingEventId(null); }}><X size={20} /></button>
                         </div>
-                        <form className="event-form" onSubmit={handleAddEvent}>
+                        <form className="event-form" onSubmit={handleSaveEvent}>
                             <div className="form-group">
                                 <label>Título</label>
                                 <input type="text" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} placeholder="Reunião Zabbix..." required />
@@ -260,8 +311,8 @@ export default function CalendarView() {
                                 <textarea rows={3} value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} placeholder="Detalhes do evento..."></textarea>
                             </div>
                             <div className="modal-actions">
-                                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>Cancelar</button>
-                                <button type="submit" className="btn-primary">Criar Evento</button>
+                                <button type="button" className="btn-secondary" onClick={() => { setShowModal(false); setEditingEventId(null); }}>Cancelar</button>
+                                <button type="submit" className="btn-primary">{editingEventId ? 'Salvar Alterações' : 'Criar Evento'}</button>
                             </div>
                         </form>
                     </div>

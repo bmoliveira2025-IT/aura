@@ -1,4 +1,4 @@
-import { FileText, Calendar, Book, Tag, ChevronRight, Clock } from 'lucide-react';
+import { FileText, Calendar, Book, Tag, ChevronRight, Clock, Trash2, Edit } from 'lucide-react';
 
 interface HomeViewProps {
     session: any;
@@ -8,9 +8,11 @@ interface HomeViewProps {
     tags: any[];
     onNavigate: (view: any) => void;
     onSelectNote: (id: string) => void;
+    onDeleteEvent: (id: string) => void;
+    onEditEvent: (id: string) => void;
 }
 
-export default function HomeView({ session, notes, events, notebooks, tags, onNavigate, onSelectNote }: HomeViewProps) {
+export default function HomeView({ session, notes, events, notebooks, tags, onNavigate, onSelectNote, onDeleteEvent, onEditEvent }: HomeViewProps) {
     const userName = session?.user?.email?.split('@')[0] || 'Aura';
     
     // Recent notes (last 3)
@@ -111,6 +113,10 @@ export default function HomeView({ session, notes, events, notebooks, tags, onNa
                                                 {new Date(event.start_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
+                                        <div className="event-card-actions">
+                                            <button className="ev-action-btn edit" onClick={(e) => { e.stopPropagation(); onEditEvent(event.id); }} title="Editar"><Edit size={14} /></button>
+                                            <button className="ev-action-btn delete" onClick={(e) => { e.stopPropagation(); onDeleteEvent(event.id); }} title="Excluir"><Trash2 size={14} /></button>
+                                        </div>
                                     </div>
                                 ))
                             )}
@@ -163,9 +169,16 @@ export default function HomeView({ session, notes, events, notebooks, tags, onNa
                 .event-date { width: 40px; height: 40px; background: var(--surface-2); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); }
                 .ev-day { font-size: 1rem; font-weight: 800; line-height: 1; color: var(--text); }
                 .ev-month { font-size: 0.6rem; text-transform: uppercase; font-weight: 700; color: #c792ea; }
-                .event-info { display: flex; flex-direction: column; }
+                .event-info { flex: 1; display: flex; flex-direction: column; }
                 .event-time { font-size: 0.75rem; color: var(--muted); }
                 .empty-text { color: var(--muted); font-size: 0.9rem; font-style: italic; margin: 0; }
+                
+                .event-card-actions { display: flex; gap: 4px; opacity: 0; transition: 0.2s; }
+                .quick-event-card:hover .event-card-actions { opacity: 1; }
+                .ev-action-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+                .ev-action-btn:hover { background: var(--surface-2); color: var(--text); }
+                .ev-action-btn.delete:hover { color: #f07178; background: rgba(240, 113, 120, 0.1); }
+                .ev-action-btn.edit:hover { color: var(--pri); background: var(--pri-glow); }
                 
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
             `}</style>

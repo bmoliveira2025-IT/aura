@@ -322,7 +322,29 @@ function App() {
     return () => clearTimeout(t);
   }, [content, title, noteId, session, view, appReady]);
 
-  // ─── Render ───────────────────────────────────────────────
+  // ─── Event Operations ──────────────────────────────────────
+
+  const deleteEvent = async (eventId: string) => {
+    if (!session?.user) return;
+    const { error } = await supabase.from('events').delete().eq('id', eventId).eq('user_id', session.user.id);
+    if (!error) {
+      setEvents(prev => prev.filter(e => e.id !== eventId));
+    }
+  };
+
+  const updateEvent = async (eventId: string, updates: any) => {
+    if (!session?.user) return;
+    const { data, error } = await supabase
+      .from('events')
+      .update(updates)
+      .eq('id', eventId)
+      .eq('user_id', session.user.id)
+      .select().single();
+    if (!error && data) {
+      setEvents(prev => prev.map(e => e.id === eventId ? data : e));
+    }
+    return { data, error };
+  };
 
   // ─── Render ───────────────────────────────────────────────
 
@@ -571,6 +593,11 @@ function App() {
             tags={tags}
             onNavigate={(v) => setView(v)}
             onSelectNote={pickNote}
+            onDeleteEvent={deleteEvent}
+            onEditEvent={(eventId) => {
+              setView('calendar');
+              // Optional: logic to auto-open modal for this event could be added here
+            }}
           />
         ) : view === 'notes' ? (
           <Dashboard

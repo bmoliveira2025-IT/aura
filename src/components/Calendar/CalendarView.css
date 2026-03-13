@@ -273,6 +273,22 @@
 .upcoming-info h4 { margin: 0; font-size: 0.88rem; color: var(--text); }
 .upcoming-info p { margin: 2px 0 0 0; font-size: 0.75rem; color: var(--muted); }
 
+.upcoming-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: 0.2s;
+}
+
+.upcoming-item:hover .upcoming-actions {
+    opacity: 1;
+}
+
+.upcoming-actions .icon-btn.delete:hover {
+    color: #f07178;
+    background: rgba(240, 113, 120, 0.1);
+}
+
 /* Modal Styles */
 .modal-overlay {
     position: fixed;
