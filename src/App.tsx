@@ -444,15 +444,19 @@ function App() {
             </div>
           </div>
 
-          {/* ── Menu Principal ── */}
+          {/* ── Início ── */}
           <div className="sidebar-section">
-            <span className="section-label">Menu Principal</span>
+            <span className="section-label">Início</span>
             <div className="notebooks-list">
               <button
-                className={`notebook-btn ${view === 'dashboard' ? 'active' : ''}`}
-                onClick={() => setView('dashboard')}
+                className={`notebook-btn ${view === 'dashboard' && filterNotebook === null && filterTag === null ? 'active' : ''}`}
+                onClick={() => {
+                  setView('dashboard');
+                  setFilterNotebook(null);
+                  setFilterTag(null);
+                }}
               >
-                <Home size={14} /> <span>Notas</span>
+                <Home size={14} /> <span>Todas as Notas</span>
               </button>
               <button
                 className={`notebook-btn ${view === 'calendar' ? 'active' : ''}`}
@@ -463,13 +467,16 @@ function App() {
             </div>
           </div>
 
-          {/* ── Filtragem ── */}
+          {/* ── Organização ── */}
           <div className="sidebar-section">
             <span className="section-label">Organização</span>
             <div className="notebooks-list">
               <button
-                className={`notebook-btn ${filterNotebook === null ? 'active' : ''}`}
-                onClick={() => setFilterNotebook(null)}
+                className={`notebook-btn ${view === 'dashboard' && filterNotebook === null ? 'active' : ''}`}
+                onClick={() => {
+                  setView('dashboard');
+                  setFilterNotebook(null);
+                }}
               >
                 <FolderOpen size={14} />
                 <span>Todas as notas</span>
@@ -479,7 +486,10 @@ function App() {
                 <button
                   key={nb}
                   className={`notebook-btn ${filterNotebook === nb ? 'active' : ''}`}
-                  onClick={() => setFilterNotebook(filterNotebook === nb ? null : nb)}
+                  onClick={() => {
+                    setView('dashboard');
+                    setFilterNotebook(filterNotebook === nb ? null : nb);
+                  }}
                 >
                   <Book size={14} />
                   <span>{nb}</span>
